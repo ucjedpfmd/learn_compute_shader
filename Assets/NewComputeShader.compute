@@ -1,0 +1,38 @@
+// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel CSMain
+#pragma kernel UpdateParticle
+
+// Create a RenderTexture with enableRandomWrite flag and set it
+// with cs.SetTexture
+RWTexture2D<float4> Result;
+
+struct ParticleData {
+    float3 pos;
+    float4 color;
+};
+
+RWStructuredBuffer<ParticleData> ParticleBuffer;
+float Time;
+
+[numthreads(8,8,1)]
+void CSMain (uint3 id : SV_DispatchThreadID)
+{
+    // TODO: insert actual code here!
+
+    Result[id.xy] = float4(id.x & id.y, (id.x & 15)/15.0, (id.y & 15)/15.0, 0.0);
+}
+
+[numthreads(10,10,10)]
+void UpdateParticle(uint3 gid : SV_GroupID,uint index : SV_GroupIndex)
+{
+    int pindex = gid.x * 1000 + index;
+
+    float x = sin(index);
+    float y = sin(index * 1.2f);
+    float3 forward = float3(x,y,-sqrt(1 - x - y * y));
+    ParticleBuffer[pindex].color = float4(forward.x,forward.y,cos(index) * 0.5f + 0.5,1);
+    if(Time > gid.x)
+    {
+        ParticleBuffer[pindex].pos += forward * 0.005f;
+    }
+}
